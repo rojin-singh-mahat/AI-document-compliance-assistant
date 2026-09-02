@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from pypdf import PdfReader
+from docx import Document
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -24,9 +25,49 @@ async def upload_document(file: UploadFile = File(...)):
         return {"error":"Content type not supported"}
     
     os.makedirs("uploads", exist_ok = True)
-
+    
+    # save the file as is
     with open(f"uploads/{file.filename}", "wb") as buffer:
         buffer.write(await file.read())
 
-def extract_text_from_pdf(file_path):
-    pdf = PDFReader
+    # read the saved file
+    try:
+        file_data = extract_text(file)
+    except Exception as e:
+        return {"error": str(e)}
+
+    return {"text": file_data}
+
+def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
+    pdf = PdfReader(file_path)
+
+    full_text = ""
+
+    for page in pdf.pages:
+        full_text += page.extract_text() + "\n"
+
+    return full_text
+
+def extract_text_from_docx(file_path): # extracts docx into string format
+    doc = Document(file_path)
+
+    full_text = ""
+    for paragraph in doc.paragraphs:
+        full_text += paragraph.text + "\n"
+    
+    return full_text
+
+def extract_text_from_txt(file_path): # extracts txt into string
+    with open(file_path, "r", encoding = "utf-8") as file:
+        return file.read()
+
+def extract_text(file):
+    match file.content_type:
+        case "application/pdf":
+            return extract_text_from_pdf(f"./uploads/{file.filename}")
+        case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            return extract_text_from_docx(f"./uploads/{file.filename}")
+        case "text/plain":
+            return extract_text_from_txt(f"./uploads/{file.filename}")
+        case _:
+            return {"error": "file type not supported"}
