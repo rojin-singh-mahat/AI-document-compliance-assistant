@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from pypdf import PdfReader
 from docx import Document
+import re
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -13,13 +14,13 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
-@app.get("/")
+@app.get("/") # main endpoint
 async def root():
     return {
         "message": "AI Document & Compliance Assistant API is running"
     }
 
-@app.post("/documents")
+@app.post("/documents") # documents upload endpoint
 async def upload_document(file: UploadFile = File(...)):
     if file.content_type not in ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]:
         return {"error":"Content type not supported"}
@@ -36,7 +37,9 @@ async def upload_document(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": str(e)}
 
-    return {"text": file_data}
+    # clean the text
+    cleaned_text = clean_text(file_data)
+    return {"text": cleaned_text}
 
 def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
     pdf = PdfReader(file_path)
@@ -61,7 +64,7 @@ def extract_text_from_txt(file_path): # extracts txt into string
     with open(file_path, "r", encoding = "utf-8") as file:
         return file.read()
 
-def extract_text(file):
+def extract_text(file): # determines how the file should be extracted
     match file.content_type:
         case "application/pdf":
             return extract_text_from_pdf(f"./uploads/{file.filename}")
@@ -71,3 +74,48 @@ def extract_text(file):
             return extract_text_from_txt(f"./uploads/{file.filename}")
         case _:
             return {"error": "file type not supported"}
+
+def clean_text(full_text): # removes whitespaces, excessive spaces and tabs
+    text = full_text.strip()
+    text = re.sub(r"\n\s*\n+", "\n\n", text)
+    text = re.sub(r"[ \t]+",  " ", text)
+
+    return text
+
+def chunk_text(cleaned_text):
+    paragraphs = cleaned_text.split("\n\n")
+    chunks = []
+
+    for paragraph in paragraphs:
+        if len(paragraph.split(" ")) > 800:
+            large_chunks = split_large_paragraph(paragraph)
+            chunks.extend(large_chunks)
+        else:
+            chunks.append(paragraph)
+
+    return chunks
+
+def split_large_paragraph(paragraph):
+    words = paragraph.split(" ")
+    chunks = []
+    start = 0
+    end = 200
+
+    while start < len(words):
+        chunk = " ".join(words[start:end])
+
+        if chunk:
+            chunks.append(" ".join(words[start:end]))
+
+        start += 150
+        end += 150
+
+    return chunks
+
+
+large_paragraph = "word " * 900
+
+chunks = split_large_paragraph(large_paragraph)
+
+for i, chunk in enumerate(chunks):
+    print(f"Chunk {i + 1}: {len(chunk.split())} words")
