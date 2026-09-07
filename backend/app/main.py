@@ -4,6 +4,8 @@ import os
 from pypdf import PdfReader
 from docx import Document
 import re
+from app.embeddings import generate_embeddings
+from app.vector_store import create_collection, store_chunks
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -39,7 +41,22 @@ async def upload_document(file: UploadFile = File(...)):
 
     # clean the text
     cleaned_text = clean_text(file_data)
-    return {"text": cleaned_text}
+
+    #chunking
+    chunked_text = chunk_text(cleaned_text)
+
+    # make embeddings
+    embedded_text = generate_embeddings(chunked_text)
+
+    #store it in Qdrant via a docker
+    create_collection()
+    store_chunks(chunked_text, embedded_text)
+
+    return {
+        "message": "Document uploaded and indexed successfully",
+        "filename": file.filename,
+        "chunks": len(chunked_text)
+    }
 
 def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
     pdf = PdfReader(file_path)
@@ -111,11 +128,3 @@ def split_large_paragraph(paragraph):
         end += 150
 
     return chunks
-
-
-large_paragraph = "word " * 900
-
-chunks = split_large_paragraph(large_paragraph)
-
-for i, chunk in enumerate(chunks):
-    print(f"Chunk {i + 1}: {len(chunk.split())} words")
