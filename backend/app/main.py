@@ -6,6 +6,7 @@ from docx import Document
 import re
 from app.embeddings import generate_embeddings
 from app.vector_store import create_collection, store_chunks
+from app.chunker import split_text
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -43,7 +44,7 @@ async def upload_document(file: UploadFile = File(...)):
     cleaned_text = clean_text(file_data)
 
     #chunking
-    chunked_text = chunk_text(cleaned_text)
+    chunked_text = split_text(cleaned_text)
 
     # make embeddings
     embedded_text = generate_embeddings(chunked_text)
@@ -98,33 +99,3 @@ def clean_text(full_text): # removes whitespaces, excessive spaces and tabs
     text = re.sub(r"[ \t]+",  " ", text)
 
     return text
-
-def chunk_text(cleaned_text):
-    paragraphs = cleaned_text.split("\n\n")
-    chunks = []
-
-    for paragraph in paragraphs:
-        if len(paragraph.split(" ")) > 800:
-            large_chunks = split_large_paragraph(paragraph)
-            chunks.extend(large_chunks)
-        else:
-            chunks.append(paragraph)
-
-    return chunks
-
-def split_large_paragraph(paragraph):
-    words = paragraph.split(" ")
-    chunks = []
-    start = 0
-    end = 200
-
-    while start < len(words):
-        chunk = " ".join(words[start:end])
-
-        if chunk:
-            chunks.append(" ".join(words[start:end]))
-
-        start += 150
-        end += 150
-
-    return chunks
