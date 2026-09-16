@@ -1,5 +1,6 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
+from uuid import uuid4
 
 client = QdrantClient( url = "http://localhost:6333" )
 
@@ -15,17 +16,28 @@ def create_collection():
             )
         )
 
-def store_chunks(chunks, embeddings):
+def delete_collection(COLLECTION_NAME):
+    """
+    CAUTION: deletes the entire qdrant collection
+    """
+    client.delete_collection(COLLECTION_NAME)
+    print("COllection ", COLLECTION_NAME, " was deleted.")
+
+def store_chunks(chunks, embeddings, document_id, filename):
     points = []
 
-    for i, (chunk, embeddings) in enumerate(zip(chunks, embeddings)):
+    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+        chunk_id = str(uuid4())
+
         points.append(
             PointStruct(
-                id = i,
-                vector = embeddings,
+                id = chunk_id,
+                vector = embedding,
                 payload = {
-                    "text" : chunk,
-                    "chunk_index" : i
+                    "document_id": document_id,
+                    "filename": filename,
+                    "chunk_index": i,
+                    "text": chunk
                 }
             )
         )

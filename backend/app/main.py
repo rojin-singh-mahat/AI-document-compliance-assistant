@@ -7,6 +7,7 @@ import re
 from app.embeddings import generate_embeddings
 from app.vector_store import create_collection, store_chunks
 from app.chunker import split_text
+from uuid import uuid4
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -50,8 +51,10 @@ async def upload_document(file: UploadFile = File(...)):
     embedded_text = generate_embeddings(chunked_text)
 
     #store it in Qdrant via a docker
+    document_id = str(uuid4())
+
     create_collection()
-    store_chunks(chunked_text, embedded_text)
+    store_chunks(chunked_text, embedded_text, document_id, file.filename)
 
     return {
         "message": "Document uploaded and indexed successfully",
