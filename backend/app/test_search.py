@@ -1,20 +1,25 @@
-from vector_store import client, COLLECTION_NAME
-from embeddings import generate_embedding
+from app.vector_store import search_chunks
+from app.embeddings import generate_embeddings
 
-query = "What are the company's responsibilities for pretecting personal data?"
+query = "What are the company's responsibilities for protecting personal data?"
 
-query_embedding = generate_embedding([query])[0]
+query_embedding = generate_embeddings([query])[0]
 
-results = client.query_points(
-    collection_name = COLLECTION_NAME,
-    query = query_embedding,
-    limit = 3,
-    with_payload = True,
-).points
+print(type(query_embedding))
+print(type(query_embedding[0]))
+print(len(query_embedding))
 
-print("\n QUery: ", query)
-print("\n Results:")
+document_id = "2ea2b20e-4d7d-416d-8014-4145b0341ffa"
+
+results = search_chunks(
+    query_embedding,
+    document_id=document_id,
+    limit=3
+)
 
 for result in results:
-    print(f"\n Score: {result.score:.4f}")
-    print(result.payload["text"])
+    print(f"\nScore: {result.score:.4f}")
+    print(f"File: {result.payload['filename']}")
+    print(f"Chunk: {result.payload['chunk_index']}")
+    print(f"Document: {result.payload['document_id']}")
+    print(f"Text: {result.payload['text'][:300]}...")

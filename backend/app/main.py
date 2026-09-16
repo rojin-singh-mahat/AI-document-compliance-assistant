@@ -100,5 +100,5 @@ def clean_text(full_text): # removes whitespaces, excessive spaces and tabs
     text = full_text.strip()
     text = re.sub(r"\n\s*\n+", "\n\n", text)
     text = re.sub(r"[ \t]+",  " ", text)
-
+    
     return text

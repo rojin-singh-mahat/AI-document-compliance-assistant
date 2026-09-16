@@ -43,3 +43,26 @@ def store_chunks(chunks, embeddings, document_id, filename):
         )
 
     client.upsert( collection_name = COLLECTION_NAME, points = points)
+
+def search_chunks(query_embedding, document_id = None, limit = 3):
+    search_filter = None
+
+    if document_id:
+        search_filter = {
+            "must": [
+                {
+                    "key": "document_id",
+                    "match": { "value": document_id}
+                }
+            ]
+        }
+
+    results = client.query_points(
+        collection_name = COLLECTION_NAME,
+        query = query_embedding,
+        query_filter = search_filter,
+        limit = limit,
+        with_payload = True
+    ).points
+
+    return results

@@ -95,3 +95,41 @@ def add_overlap(chunks, overlap):
         new_chunk.append(combined_chunk)
 
     return new_chunk
+
+import re
+import tiktoken
+
+tokenizer = tiktoken.get_encoding("cl100k_base")
+
+
+def remove_table_of_contents(text):
+    lines = text.splitlines()
+
+    toc_start = None
+    toc_end = None
+
+    # Find the start of the table of contents
+    for i, line in enumerate(lines):
+        if line.strip().lower() in {"contents", "table of contents"}:
+            toc_start = i
+            break
+
+    # No TOC found
+    if toc_start is None:
+        return text
+
+    # Find the first real section after the TOC
+    for i in range(toc_start + 1, len(lines)):
+        if re.match(r"^\s*introduction\b", lines[i], re.IGNORECASE):
+            toc_end = i
+            break
+
+    # If we couldn't determine where the TOC ends,
+    # don't delete anything.
+    if toc_end is None:
+        return text
+
+    # Keep everything before the TOC and everything after it
+    cleaned_lines = lines[:toc_start] + lines[toc_end:]
+
+    return "\n".join(cleaned_lines)
