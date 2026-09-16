@@ -1,4 +1,4 @@
-from chunker import remove_table_of_contents
+from app.chunker import remove_table_of_contents
 
 
 text = """
