@@ -1,13 +1,12 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from pypdf import PdfReader
+import os, re
 from docx import Document
-import re
 from app.embeddings import generate_embeddings
 from app.vector_store import create_collection, store_chunks
 from app.chunker import split_text
 from uuid import uuid4
+import pymupdf
 
 app = FastAPI(title="AI Document & Compliance Assistant")
 
@@ -63,14 +62,28 @@ async def upload_document(file: UploadFile = File(...)):
     }
 
 def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
-    pdf = PdfReader(file_path)
+    document = pymupdf.open(file_path)
+    pages = []
+    for  page_number, page in enumerate(document):
+        text = page.get_text("text", sort = True).strip()
 
-    full_text = ""
+        if not text:
+            continue
 
-    for page in pdf.pages:
-        full_text += page.extract_text() + "\n"
+        # separate table of content pages for reports
+        first_lines = text.splitlines()[0] if text.strip() else ""
+        first_words = first_lines.split()[:3]
+        heading = " ".join(word.strip().lower() for word in first_words)
+        if heading.startswith("table of contents"):
+            continue
+        if heading.startswith("contents"):
+            continue
+        if heading.startswith("table of figures"):
+            continue
 
-    return full_text
+        pages.append({"page_number": page_number+1, "text": text})
+    document.close()
+    return pages
 
 def extract_text_from_docx(file_path): # extracts docx into string format
     doc = Document(file_path)
