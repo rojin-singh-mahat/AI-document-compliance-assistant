@@ -1,7 +1,9 @@
+#this file runs tests that i coudldn't be bothered with to create a new test file everytime for. (as long a I can understand MY english)
+
 import pymupdf
 from collections import Counter
 
-file_path = "uploads/RAG_Noisy_Document_Example.pdf"
+file_path = "../../uploads/RAG_Noisy_Document_Example.pdf"
 
 document = pymupdf.open(file_path)
 for page_number, page in enumerate(document):
