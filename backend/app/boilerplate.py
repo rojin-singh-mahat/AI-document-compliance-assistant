@@ -2,6 +2,16 @@ from collections import defaultdict
 import pymupdf
 
 def find_repeated_blocks(file_path):
+    """
+    Finds repeated blocks of text in a PDF file.
+
+    Parameters:
+        file_path (str): Path to the PDF file.
+
+    Returns:
+        list[dict]: Repeated blocks with their position, location,
+        number of occurrences, and text.
+    """
     coordinate_tracker = defaultdict(list)
 
     with pymupdf.open(file_path) as document:
@@ -24,7 +34,7 @@ def find_repeated_blocks(file_path):
 
     repeated_blocks = []
     for position, instances in coordinate_tracker.items():
-        if len(instances)/total_pages < 0.5:# if the instances dont cover half of the pages in the document?
+        if len(instances)/total_pages < 0.5:
             continue
 
         y0 = position[1]
@@ -47,12 +57,31 @@ def find_repeated_blocks(file_path):
     return repeated_blocks
 
 def get_boilerplate_positions(file_path):
+    """
+    Finds the positions of repeated boilerplate blocks in a PDF.
+
+    Parameters:
+        file_path (str): Path to the PDF file.
+
+    Returns:
+        set[tuple]: Positions of repeated blocks on the PDF pages.
+    """
     repeated_blocks = find_repeated_blocks(file_path)
     return {
         item["position"] for item in repeated_blocks
     }
 
 def extract_clean_pages(file_path):
+    """
+    Extracts text from a PDF while removing repeated boilerplate
+    and table of contents/figures pages.
+
+    Parameters:
+        file_path (str): Path to the PDF file.
+
+    Returns:
+        list[dict]: Cleaned page text with its corresponding page number.
+    """
     positions = get_boilerplate_positions(file_path)
     cleaned_pages = []
 

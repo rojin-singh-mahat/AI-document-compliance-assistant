@@ -4,20 +4,30 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2:3b"
 
 def generate_asnwer(question, context):
+    """
+    Generates an answer using the locally running Llama model.
+
+    Parameters:
+        question (str): User's question.
+        context (str): Relevant document context.
+
+    Returns:
+        str: Generated answer from the LLM.
+    """
     prompt = f"""
-You are a document compliance assistant.
+        You are a document compliance assistant.
 
-Answer the user's question using ONLY the provided document context.
-If the context does not contain enough information, say you don't have enough information.
+        Answer the user's question using ONLY the provided document context.
+        If the context does not contain enough information, say you don't have enough information.
 
-Document context:
-{context}
+        Document context:
+        {context}
 
-User question:
-{question}
+        User question:
+        {question}
 
-Answer:
-"""
+        Answer:
+    """
     response = requests.post(OLLAMA_URL, json = {
         "model": MODEL_NAME,
         "prompt": prompt,

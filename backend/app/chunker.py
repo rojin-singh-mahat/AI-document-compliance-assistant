@@ -4,9 +4,29 @@ import tiktoken
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def count_tokens(text):
+    """
+    Counts the number of tokens in the given text.
+
+    Parameters:
+        text (str): Text to tokenize.
+
+    Returns:
+        int: Number of tokens in the text.
+    """
     return len(tokenizer.encode(text))
 
-def split_text(text, max_tokens = 500, overlap = 50):
+def split_text(text, max_tokens=500, overlap=50):
+    """
+    Splits text into chunks using recursive splitting and overlap.
+
+    Parameters:
+        text (str): Text to split.
+        max_tokens (int): Maximum number of tokens per chunk.
+        overlap (int): Number of overlapping tokens between chunks.
+
+    Returns:
+        list[str]: List of text chunks.
+    """
     if overlap >= max_tokens:
         raise ValueError("overlap must be smaller than max_tokens")
     
@@ -19,6 +39,17 @@ def split_text(text, max_tokens = 500, overlap = 50):
     return add_overlap(chunks, overlap)
 
 def recursive_split(text, separators, max_tokens):
+    """
+    Recursively splits text until chunks fit within the token limit.
+
+    Parameters:
+        text (str): Text to split.
+        separators (list[str]): Separators used during recursive splitting.
+        max_tokens (int): Maximum number of tokens per chunk.
+
+    Returns:
+        list[str]: List of text chunks.
+    """
     text = text.strip() # remove trailing whitespaces
     if not text: # no text? return nothing
         return []
@@ -67,6 +98,16 @@ def recursive_split(text, separators, max_tokens):
     return chunks
 
 def hard_split(text, max_tokens):
+    """
+    Splits text into chunks based on the token limit.
+
+    Parameters:
+        text (str): Text to split.
+        max_tokens (int): Maximum number of tokens per chunk.
+
+    Returns:
+        list[str]: List of separated text chunks.
+    """
     tokens = tokenizer.encode(text)
     chunks = []
 
@@ -77,6 +118,16 @@ def hard_split(text, max_tokens):
     return chunks
 
 def add_overlap(chunks, overlap):
+    """
+    Adds overlapping tokens to each chunk after the first.
+
+    Parameters:
+        chunks (list[str]): Text chunks.
+        overlap (int): Number of tokens to overlap between chunks.
+
+    Returns:
+        list[str]: Chunks with overlapping text.
+    """
     if not chunks or overlap <= 0:
         return chunks
 

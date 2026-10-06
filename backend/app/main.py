@@ -61,7 +61,16 @@ async def upload_document(file: UploadFile = File(...)):
         "chunks": len(chunked_text)
     }
 
-def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
+def extract_text_from_pdf(file_path):
+    """
+    Extracts text from a PDF while preserving page numbers.
+
+    Parameters:
+        file_path (str): Path to the PDF file.
+
+    Returns:
+        list[dict]: Page numbers and extracted text for each page.
+    """
     document = pymupdf.open(file_path)
     pages = []
     for  page_number, page in enumerate(document):
@@ -85,7 +94,16 @@ def extract_text_from_pdf(file_path): # extracts pdfs into normal string format
     document.close()
     return pages
 
-def extract_text_from_docx(file_path): # extracts docx into string format
+def extract_text_from_docx(file_path):
+    """
+    Extracts text from a DOCX file.
+
+    Parameters:
+        file_path (str): Path to the DOCX file.
+
+    Returns:
+        str: Extracted text from the document.
+    """
     doc = Document(file_path)
 
     full_text = ""
@@ -94,11 +112,30 @@ def extract_text_from_docx(file_path): # extracts docx into string format
     
     return full_text
 
-def extract_text_from_txt(file_path): # extracts txt into string
+def extract_text_from_txt(file_path):
+    """
+    Extracts text from a TXT file.
+
+    Parameters:
+        file_path (str): Path to the TXT file.
+
+    Returns:
+        str: Text contained in the file.
+    """
     with open(file_path, "r", encoding = "utf-8") as file:
         return file.read()
 
-def extract_text(file): # determines how the file should be extracted
+def extract_text(file):
+    """
+    Determines the appropriate extraction method based on file type.
+
+    Parameters:
+        file: Uploaded file.
+
+    Returns:
+        The extracted content from the appropriate extraction function,
+        or an error message for unsupported file types.
+    """
     match file.content_type:
         case "application/pdf":
             return extract_text_from_pdf(f"./uploads/{file.filename}")
@@ -109,7 +146,17 @@ def extract_text(file): # determines how the file should be extracted
         case _:
             return {"error": "file type not supported"}
 
-def clean_text(full_text): # removes whitespaces, excessive spaces and tabs
+def clean_text(full_text):
+    """
+    Performs basic text cleaning by removing excessive whitespace,
+    newlines, and tabs.
+
+    Parameters:
+        full_text (str): Text to clean.
+
+    Returns:
+        str: Cleaned text.
+    """
     text = full_text.strip()
     text = re.sub(r"\n\s*\n+", "\n\n", text)
     text = re.sub(r"[ \t]+",  " ", text)
