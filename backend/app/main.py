@@ -5,6 +5,7 @@ from docx import Document
 from app.embeddings import generate_embeddings
 from app.vector_store import create_collection, store_chunks
 from app.chunker import split_text
+from app.boilerplate import extract_clean_pages
 from uuid import uuid4
 import pymupdf
 
@@ -40,11 +41,11 @@ async def upload_document(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": str(e)}
 
-    # clean the text
-    cleaned_text = clean_text(file_data)
+    # clean the text of each page
+    cleaned_pages = clean_pages(file_data)
 
     #chunking
-    chunked_text = split_text(cleaned_text)
+    chunked_text = split_text(cleaned_pages)
 
     # make embeddings
     embedded_text = generate_embeddings(chunked_text)
@@ -138,27 +139,33 @@ def extract_text(file):
     """
     match file.content_type:
         case "application/pdf":
-            return extract_text_from_pdf(f"./uploads/{file.filename}")
+            return extract_clean_pages(f"./uploads/{file.filename}")
         case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            return extract_text_from_docx(f"./uploads/{file.filename}")
+            return {"error": "file type not supported yet"}
         case "text/plain":
-            return extract_text_from_txt(f"./uploads/{file.filename}")
+            return {"error": "file type not supported yet"}
         case _:
             return {"error": "file type not supported"}
 
-def clean_text(full_text):
+def clean_pages(pages):
     """
-    Performs basic text cleaning by removing excessive whitespace,
-    newlines, and tabs.
+    Performs basic text cleaning on each page
 
     Parameters:
-        full_text (str): Text to clean.
+        pages (list[dict]): Pages containing dictionary and text
 
     Returns:
-        str: Cleaned text.
+        list[dict]: Cleaned text from each page with their page number
     """
-    text = full_text.strip()
-    text = re.sub(r"\n\s*\n+", "\n\n", text)
-    text = re.sub(r"[ \t]+",  " ", text)
+    cleaned_pages = []
+    for page in pages:
+        text = page["text"].strip()
+        text = re.sub(r"\n\s*\n+", "\n\n", text)
+        text = re.sub(r"[ \t]+",  " ", text)
+
+        if text:
+            cleaned_pages.append({
+                "page_number": page["page_number"], "text": text
+            })
     
-    return text
+    return cleaned_pages
